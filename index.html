@@ -43,9 +43,11 @@
           <!-- Language -->
           <div class="utility-block">
             <span class="utility-label" id="langLabel">Language</span>
-            <div class="lang-toggle" style="display: flex; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; padding: 2px; margin-left: 8px;">
-              <div class="lang-btn active" id="btn-en" style="padding: 4px 12px; font-size: 11px; cursor: pointer; border-radius: 4px;">EN</div>
-              <div class="lang-btn" id="btn-hi" style="padding: 4px 12px; font-size: 11px; cursor: pointer; border-radius: 4px;">हिं</div>
+            <div class="lang-toggle" style="display: flex; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; padding: 2px; margin-left: 8px; background: white;">
+              <div class="lang-btn active" id="btn-en" style="padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 4px;">EN</div>
+              <div class="lang-btn" id="btn-hi" style="padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 4px;">हिं</div>
+              <div class="lang-btn" id="btn-ta" style="padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 4px;">தமிழ்</div>
+              <div class="lang-btn" id="btn-bn" style="padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 4px;">বাংলা</div>
             </div>
           </div>
 
@@ -496,11 +498,14 @@
         </p>
         <div class="field">
           <label id="lblConfigKey">Gemini API Key</label>
-          <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." />
+          <div style="position: relative; display: flex; align-items: center; width: 100%;">
+            <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." style="padding-right: 40px; width: 100%; box-sizing: border-box;" />
+            <button id="toggleApiKeyVisibility" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; font-size: 16px; color: var(--slate); padding: 0; display: flex; align-items: center; justify-content: center; height: 100%; outline: none;" type="button">👁️</button>
+          </div>
         </div>
         <div class="field" style="margin-bottom: 20px;">
           <label id="lblConfigModel">Model Version</label>
-          <select id="geminiApiModel">
+          <select id="geminiApiModel" style="width: 100%; box-sizing: border-box;">
             <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
             <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
             <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
@@ -509,8 +514,23 @@
             <option value="gemma-4-26b-a4b-it">Gemma 4 (26B)</option>
           </select>
         </div>
+        <div class="field" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="chkKioskMode" style="width: auto; cursor: pointer; margin: 0;" />
+          <label for="chkKioskMode" style="margin: 0; font-size: 13.5px; cursor: pointer; font-weight: normal; color: var(--ink);" id="lblKioskMode">
+            Kiosk Mode (Auto-delete key on page close / 5-min inactivity)
+          </label>
+        </div>
         
-        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+        <div style="border-top: 1px solid var(--line); margin: 20px 0 16px 0; padding-top: 16px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--ink); font-weight: 600;" id="titleDemoFeatures">Diagnostic & Demo Features</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <button id="btnTestConfig" class="btn-ghost" style="padding: 6px 12px; font-size: 12.5px; border-radius: 4px; cursor: pointer; border: 1px solid var(--line); background: white;">⚡ Test Connection</button>
+            <button id="btnLoadDemoData" class="btn-ghost" style="padding: 6px 12px; font-size: 12.5px; border-radius: 4px; cursor: pointer; border: 1px solid var(--line); background: white;">🚀 Load Demo Grievances</button>
+            <button id="btnWipeStorage" class="btn-ghost" style="padding: 6px 12px; font-size: 12.5px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(217, 56, 56, 0.3); color: #d93838; background: white;">🗑️ Wipe Local Data</button>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px;">
           <button class="btn-ghost" id="btnCancelSettings">Cancel</button>
           <button class="btn-primary" id="btnSaveSettings">Save Config</button>
         </div>

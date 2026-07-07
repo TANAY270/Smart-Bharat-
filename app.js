@@ -14,7 +14,10 @@ let state = {
   ttsEnabled: true,
   currentDocChecklist: [],
   mapPins: [], // Coordinates and information for ward map hotspots
-  selectedCoords: { x: 120, y: 110 } // Default map location
+  selectedCoords: { x: 120, y: 110 }, // Default map location
+  kioskMode: localStorage.getItem('sb_kiosk_mode') === 'true',
+  lastInteractionTime: Date.now(),
+  lastMessageSentTime: 0
 };
 
 // ----------------------------------------------------
@@ -127,8 +130,44 @@ const DICT = {
     footerDesc: "An official Generative AI initiative of the Municipal Nodal Board to provide transparent, accessible, and digitally inclusive public services to every citizen.",
     footerLabelInfo: "Information",
     footerLabelSupport: "Support",
+    footerLabelSupport: "Support",
     footerLabelGov: "Government Links",
-    footerCopyright: "© 2026 Municipal Corporation. All Rights Reserved."
+    footerCopyright: "© 2026 Municipal Corporation. All Rights Reserved.",
+    // Modal Keys
+    modalAboutTitle: "About Us",
+    modalAboutHtml: `<p style="font-size: 14px; line-height: 1.6; color: var(--ink);">Welcome to the <strong>Smart Bharat Civic Companion Portal</strong>.</p>
+                     <p style="font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); margin-top: 12px;">This platform is an official, AI-driven municipal workspace designed to simplify document workflows, expedite grievance filing, and bridge communication gaps between local government offices and municipal residents.</p>
+                     <p style="font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); margin-top: 12px;">Built with modern Generative AI technologies, we aim to ensure civic convenience, transparent service timelines, and high accessibility support.</p>`,
+    modalContactTitle: "Contact Us",
+    modalContactHtml: `<div style="line-height: 1.8; font-size: 14px; color: var(--ink);">
+                         <p style="margin-bottom: 12px;">📞 <strong>Citizen Toll-Free Helpline:</strong> 1800-345-5678 (Available 24x7)</p>
+                         <p style="margin-bottom: 12px;">📧 <strong>Official Grievance Desk:</strong> support@smartbharat.gov.in</p>
+                         <p style="margin-bottom: 12px;">🏢 <strong>Central Office:</strong> Central Headquarters, Vikas Marg, New Delhi - 110001</p>
+                         <hr style="border: none; border-top: 1px solid var(--line); margin: 16px 0;">
+                         <p style="font-size: 12.5px; color: var(--ink-muted);">For issues relating to municipal repairs, please file an official request using the <strong>\"Report an Issue\"</strong> tab for direct coordination with ward staff.</p>
+                       </div>`,
+    modalFeedbackTitle: "Rate our portal:",
+    modalFeedbackComment: "Add comments (optional):",
+    modalFeedbackPlaceholder: "Share your experience with Sahayak AI...",
+    modalFeedbackSubmit: "Submit Feedback",
+    modalFeedbackSuccess: "Thank you! Your feedback has been registered to help us improve the citizen companion.",
+    modalFaqsTitle: "FAQs",
+    modalFaqsList: [
+      { q: "How long does it take for a grievance to get resolved?", a: "Typically, minor issues like streetlight bulb replacements or garbage sanitation sweeps take 24-48 hours. Major civic works like road pothole repairs or sewer main cleaning can take 3-5 working days." },
+      { q: "Are the documents uploaded to the Verification Lab secure?", a: "Yes, absolutely. The Document Verification Lab runs 100% locally on your browser. Your files are inspected client-side and are never uploaded or stored on any server." },
+      { q: "Can I use the Sahayak AI Companion without an internet connection?", a: "Yes, our offline keyword parser runs locally on the browser. If you don't have internet or haven't configured a Gemini API key, the simulator returns offline templates for Aadhaar, Voter cards, licensing, etc." }
+    ],
+    modalHelpTitle: "Help & Guidelines",
+    modalHelpHtml: `<div style="font-size: 13.5px; line-height: 1.6; color: var(--ink);">
+                      <h4 style="margin: 0 0 8px 0; font-size: 15px; font-family: var(--font-serif);">How to Navigate the Portal:</h4>
+                      <ol style="padding-left: 20px; margin-bottom: 20px;">
+                        <li style="margin-bottom: 8px;"><strong>Sahayak AI Chat:</strong> Ask about services, schemes, and guidelines. Click the mic icon to dictate queries in English or Hindi.</li>
+                        <li style="margin-bottom: 8px;"><strong>Report an Issue:</strong> Click directly on the vector map to register coordinates, drop a photo, and hit submit.</li>
+                        <li style="margin-bottom: 8px;"><strong>Document Helper Lab:</strong> Search for services to verify if your files match the checklist rules.</li>
+                      </ol>
+                      <h4 style="margin: 0 0 8px 0; font-size: 15px; font-family: var(--font-serif);">Configuring Live AI Integration:</h4>
+                      <p style="color: var(--ink-muted);">Click the <strong>\"AI Config\"</strong> button in the top utility bar, paste your Google Gemini API Key, and save. The app will immediately transition from simulator template fallback response structures to real-time generative responses.</p>
+                    </div>`
   },
   hi: {
     brandSub: "नागरिक सहायक",
@@ -173,7 +212,7 @@ const DICT = {
     trackSearch: "फ़ाइल आईडी दर्ज करें, जैसे SB-2026-103847",
     trackSearchBtn: "खोजें",
     svcEyebrow: "निर्देशिका",
-    svcTitle: "सेवा निर्देशिका",
+    svcTitle: "सेवा निर्देशিকা",
     svcSub: "सामान्य सरकारी सेवाएं। विवरण पढ़ने या सहायक AI से सहायता लेने के लिए कार्ड चुनें।",
     docEyebrow: "दस्तावेज़ चेकलिस्ट सहायक",
     docTitle: "जानें क्या साथ ले जाना है",
@@ -214,7 +253,7 @@ const DICT = {
     alertTitle: "मानसून जल निकासी अभियान (जुलाई 2026)",
     alertDesc: "नगर निगम द्वारा मुख्य जल निकासी नालों की सफाई की जा रही है। तत्काल कार्रवाई के लिए \"शिकायत दर्ज करें\" का उपयोग करके जलभराव की रिपोर्ट करें।",
     accessibilityLabel: "पाठ पहुँच क्षमता",
-    analyticsLabel: "नगर निगम विश्लेषिकी और पारदर्शिता बहीखाता",
+    analyticsLabel: "नगर निगम विश्लेषिकी और पारदर्शिता बહીखाता",
     lblResolutionRate: "निवारण दर",
     lblAvgTimeLabel: "औसत निवारण समय",
     lblActiveCrewsLabel: "सक्रिय सेवा दल",
@@ -237,9 +276,320 @@ const DICT = {
     footerLabelInfo: "सूचना",
     footerLabelSupport: "सहायता",
     footerLabelGov: "सरकारी वेबसाइटें",
-    footerCopyright: "© 2026 नगर निगम। सर्वाधिकार सुरक्षित।"
+    footerCopyright: "© 2026 नगर निगम। सर्वाधिकार सुरक्षित।",
+    // Modal Keys
+    modalAboutTitle: "हमारे बारे में",
+    modalAboutHtml: `<p style="font-size: 14px; line-height: 1.6; color: var(--ink);"><strong>स्मार्ट भारत नागरिक सहायक पोर्टल</strong> में आपका स्वागत है।</p>
+                     <p style="font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); margin-top: 12px;">यह मंच एक एकीकृत नागरिक पोर्टल है जो एआई-संचालित सहायकों और डिजिटल ग्राइवेंस टूल का उपयोग करके नगर निगम के प्रशासनिक कार्यों को सरल बनाता है।</p>
+                     <p style="font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); margin-top: 12px;">हमारा लक्ष्य प्रत्येक भारतीय नागरिक को कुशल, उत्तरदायी और डिजिटल रूप से सुरक्षित तरीके से सार्वजनिक सेवाओं तक पहुंच प्रदान करना है।</p>`,
+    modalContactTitle: "संपर्क करें",
+    modalContactHtml: `<div style="line-height: 1.8; font-size: 14px; color: var(--ink);">
+                         <p style="margin-bottom: 12px;">📞 <strong>नागरिक टोल-फ्री हेल्पलाइन:</strong> 1800-345-5678 (24x7 उपलब्ध)</p>
+                         <p style="margin-bottom: 12px;">📧 <strong>आधिकारिक शिकायत ईमेल:</strong> support@smartbharat.gov.in</p>
+                         <p style="margin-bottom: 12px;">🏢 <strong>केंद्रीय कार्यालय:</strong> नगर निगम भवन, विकास मार्ग, नई दिल्ली - 110001</p>
+                         <hr style="border: none; border-top: 1px solid var(--line); margin: 16px 0;">
+                         <p style="font-size: 12.5px; color: var(--ink-muted);">यदि आपको जलभराव, खराब सड़कों या स्ट्रीटलाइट से संबंधित शिकायत दर्ज करनी है, तो कृपया शीर्ष पर स्थित <strong>\"शिकायत दर्ज करें\"</strong> विकल्प का उपयोग करें।</p>
+                       </div>`,
+    modalFeedbackTitle: "प्रतिक्रिया दें",
+    modalFeedbackComment: "अपनी टिप्पणियाँ लिखें (वैकल्पिक):",
+    modalFeedbackPlaceholder: "कृपया अपना सुझाव साझा करें...",
+    modalFeedbackSubmit: "फीडबैक भेजें",
+    modalFeedbackSuccess: "आपकी प्रतिक्रिया प्राप्त हुई। स्मार्ट भारत को बेहतर बनाने में सहायता के लिए धन्यवाद!",
+    modalFaqsTitle: "अक्सर पूछे जाने वाले प्रश्न",
+    modalFaqsList: [
+      { q: "शिकायत का समाधान होने में कितना समय लगता है?", a: "सामान्य तौर पर, स्ट्रीटलाइट और कचरे की सफाई में 24-48 घंटे लगते हैं। सड़क की मरम्मत और जल निकासी से संबंधित समस्याओं के समाधान में 3-5 कार्य दिवस लग सकते हैं।" },
+      { q: "क्या मेरे द्वारा अपलोड किए गए दस्तावेज़ सुरक्षित हैं?", a: "हां। दस्तावेज़ सत्यापन लैब पूरी तरह से क्लाइंट-साइड काम करती है। आपकी फाइलें हमारे सर्वर पर अपलोड नहीं की जाती हैं, जिससे आपकी गोपनीयता बनी रहती है।" },
+      { q: "क्या मैं बिना इंटरनेट के भी सहायक का उपयोग कर सकता हूँ?", a: "हां, यदि आपके पास इंटरनेट नहीं है या आपके पास कोई एपीआई कुंजी नहीं है, तो पोर्टल स्वचालित रूप से हमारे स्थानीय बुद्धिमान एनएलपी सिमुलेटर का उपयोग करता है जो अधिकांश सामान्य नागरिक प्रश्नों का उत्तर दे सकता है।" }
+    ],
+    modalHelpTitle: "सहायता एवं दिशा-निर्देश",
+    modalHelpHtml: `<div style="font-size: 13.5px; line-height: 1.6; color: var(--ink);">
+                      <h4 style="margin: 0 0 8px 0; font-size: 15px; font-family: var(--font-serif);">पोर्टल का उपयोग कैसे करें:</h4>
+                      <ol style="padding-left: 20px; margin-bottom: 20px;">
+                        <li style="margin-bottom: 8px;"><strong>सहायक एआई:</strong> वॉयस माइक बटन का उपयोग करके बोलकर या लिखकर सरकारी योजनाओं के बारे में जानकारी प्राप्त करें।</li>
+                        <li style="margin-bottom: 8px;"><strong>शिकायत दर्ज करें:</strong> मानचित्र पर क्लिक करके सटीक स्थान चुनें, समस्या की फोटो अपलोड करें और तुरंत शिकायत दर्ज करें।</li>
+                        <li style="margin-bottom: 8px;"><strong>दस्तावेज़ सहायक:</strong> योजना का नाम लिखें और दस्तावेज़ों को ड्रैग-एंड-ड्रॉप करके पात्रता की जांच करें।</li>
+                      </ol>
+                      <h4 style="margin: 0 0 8px 0; font-size: 15px; font-family: var(--font-serif);">एआई कुंजी कैसे कॉन्फ़िगर करें:</h4>
+                      <p style="color: var(--ink-muted);">शीर्ष बार पर <strong>\"AI Config\"</strong> पर क्लिक करें, अपनी व्यक्तिगत जेमिनी एपीआई कुंजी दर्ज करें और सेटिंग्स सहेजें।</p>
+                    </div>`
+  },
+  ta: {
+    brandSub: "குடிமகன் உதவியாளர்",
+    navhome: "முகப்பு",
+    navassistant: "உதவியாளர் AI",
+    navreport: "புகார் அளிக்கவும்",
+    navtrack: "புகாரைக் கண்காணிக்க",
+    navservices: "சேவை அடைவு",
+    navdocs: "ஆவண உதவி",
+    langLabel: "மொழி",
+    heroTitle: "ஒவ்வொரு குடிமைப் பணிக்கும் ஒரு AI துணை.",
+    heroSub: "கேள்விகளை உங்கள் சொந்த மொழியில் கேளுங்கள், உள்ளூர் பிரச்சினைகளைப் புகாரளிக்கவும், உங்கள் புகார்களைக் கண்காணிக்கவும், தேவையான ஆவணங்களைச் சரிபார்க்கவும்.",
+    statOpenLabel: "செயலில் உள்ள புகார்கள்",
+    statResolvedLabel: "தீர்க்கப்பட்ட சிக்கல்கள்",
+    statAvail: "சஹாயக் ஆன்லைனில்",
+    quickActionsLabel: "விரைவான செயல்கள்",
+    qa1h: "சஹாயக்கிடம் கேளுங்கள்",
+    qa1p: "அரசுத் திட்டங்கள், தகுதி மற்றும் அலுவலகங்கள் பற்றிய உடனடி பதில்களை தமிழ், இந்தி அல்லது ஆங்கிலத்தில் பெறுங்கள்.",
+    qa2h: "பிரச்சினையைப் புகாரளிக்கவும்",
+    qa2p: "மின்விளக்குகள், குப்பைகள், நீர் கசிவு அல்லது சாலைப் பள்ளங்கள் போன்ற பிரச்சினைகளை நகராட்சி இணையதளத்தில் புகாரளிக்கவும்.",
+    qa3h: "ஆவணங்களைச் சரிபார்க்கவும்",
+    qa3p: "தேவையான ஆவணங்களின் பட்டியலைக் கண்டறிந்து, எங்கள் சரிபார்ப்பு சிமுலேட்டரில் வரைவுகளைச் சரிபார்க்கவும்.",
+    popularLabel: "பிரபலமான அடையாள மற்றும் நலன்புரி சேவைகள்",
+    asstEyebrow: "AI துணை",
+    asstTitle: "சஹாயக் AI",
+    asstSub: "அரசுத் திட்டங்கள், தகுதி, நடைமுறைகள் அல்லது உள்ளூர் நகராட்சி அமைப்புகள் பற்றி கேளுங்கள் - நேரடி உதவி பெறுங்கள்.",
+    reportEyebrow: "பொது குறை தீர்க்கும்",
+    reportTitle: "பிரச்சினையைப் புகாரளிக்கவும்",
+    reportSub: "நகராட்சி அதிகாரிகளுக்குத் தெரிவிக்க புகார் அளிக்கவும். கண்காணிப்பு எண்கள் மற்றும் நேரடி காலவரிசை அறிவிப்புகளைப் பெறுங்கள்.",
+    lblCategory: "பிரச்சினை வகை",
+    lblLocation: "இடம் / லேண்ட்மார்க்",
+    lblDesc: "பிரச்சினையை விளக்கவும்",
+    lblName: "உங்கள் பெயர் (விருப்பம்)",
+    lblPhone: "தொலைபேசி எண் (விருப்பம்)",
+    submitBtn: "புகாரைச் சமர்ப்பிக்கவும்",
+    fileNoLabel: "அதிகாரப்பூர்வ கோப்பு கண்காணிப்பு எண்",
+    confirmMsg: "உங்களது புகார் நகராட்சி சேவையகத்தில் பதிவு செய்யப்பட்டுள்ளது. நிலைமையைக் கண்காணிக்க இந்த ஐடியைச் சேமிக்கவும்.",
+    fileAnother: "மற்றொரு சிக்கலைப் புகாரளிக்கவும்",
+    trackEyebrow: "புகார் நிலை",
+    trackTitle: "புகாரைக் கண்காணிக்க",
+    trackSub: "செயலில் உள்ள சிக்கல்களைத் தேடவும், நகராட்சி முன்னேற்றப் பதிவைப் பார்க்கவும் அல்லது வரைபடத்தில் இடத்தைக் கண்டறியவும்.",
+    trackSearch: "கோப்பு ஐடியை உள்ளிடவும் (எ.கா. SB-2026-103847)",
+    trackSearchBtn: "தேடவும்",
+    svcEyebrow: "அடைவு",
+    svcTitle: "சேவை அடைவு",
+    svcSub: "அடிக்கடி பயன்படுத்தப்படும் குடிமக்கள் சேவைகள். விவரங்களைப் படிக்க கார்டுகளைத் தேர்ந்தெடுக்கவும் அல்லது சஹாயக்கிடம் உதவி பெறவும்.",
+    docEyebrow: "ஆவணச் சரிபார்ப்பு உதவியாளர்",
+    docTitle: "என்ன ஆவணங்களை எடுத்துச் செல்ல வேண்டும்",
+    docSub: "அலுவலகங்களுக்குத் திரும்பத் திரும்பச் செல்வதைத் தவிர்க்கவும். தேவையான ஆவணங்களைச் சரிபார்க்க சேவையின் பெயரைத் தட்டச்சு செய்யவும்.",
+    lblDocGoal: "நீங்கள் எந்த சான்றிதழ்/சேவைக்கு விண்ணப்பிக்கிறீர்கள்?",
+    docGoalPlaceholder: "எ.கா. புதிய பாஸ்போர்ட், சாதிச் சான்றிதழ், ஓட்டுநர் உரிமம் புதுப்பித்தல்",
+    docSubmit: "தேவைகளை பகுப்பாய்வு செய்க",
+    chatPlaceholder: "உங்கள் கேள்வியைத் தட்டச்சு செய்க...",
+    chatSend: "அனுப்புக ➔",
+    emptyTrack: "இந்த சாதனத்திலிருந்து இன்னும் புகார்கள் எதுவும் பதிவு செய்யப்படவில்லை. ஒரு புகாரைப் பதிவு செய்ய 'பிரச்சினையைப் புகாரளிக்கவும்' பக்கத்திற்குச் செல்லவும்.",
+    notFound: "அந்த கண்காணிப்பு எண்ணில் எந்த நகராட்சிக் கோப்பும் காணப்படவில்லை.",
+    thisArea: "உள்ளூர் வார்டில் உள்ள புகார்கள்",
+    settingsText: "AI அமைப்புகள்",
+    themeTextDark: "இருண்ட பயன்முறை",
+    themeTextLight: "ஒளி பயன்முறை",
+    lblMapMarker: "வரைபடத்தில் இருப்பிடத்தைக் குறிக்கவும் (தேர்ந்தெடுக்க கிளிக் செய்யவும்)",
+    mapLabelText: "வார்டு வரைபடம் (மத்திய மாவட்டம்)",
+    legPending: "நிலுவையில் உள்ளது",
+    legProgress: "செயலில் உள்ளது",
+    legResolved: "தீர்க்கப்பட்டது",
+    lblImage: "பிரச்சினையின் புகைப்படம் (விருப்பம்)",
+    uploadTextLabel: "புகைப்படத்தை இங்கே இழுத்து விடவும் அல்லது கிளிக் செய்யவும்",
+    lblTimelinePhoto: "இணைக்கப்பட்ட புகைப்படம்",
+    lblTimelineLog: "நகராட்சி நடவடிக்கை காலவரிசை",
+    stepTitle1: "புகார் பதிவு செய்யப்பட்டது",
+    stepTitle2: "பொறியாளர் நியமிக்கப்பட்டார்",
+    stepTitle3: "சரிசெய்தல் பணி செயலில் உள்ளது",
+    stepTitle4: "பிரச்சினை தீர்க்கப்பட்டது",
+    muteStatusOn: "ஒலி இயக்கப்பட்டது",
+    muteStatusOff: "ஒலி முடக்கப்பட்டது",
+    asstStatusLabel: "செயலில் மற்றும் ஆன்லைனில்",
+    modalConfigTitle: "AI எஞ்சின் அமைப்புகள்",
+    modalConfigDesc: "கூகிள் ஜெமினியிடமிருந்து நேரடி பதில்களைப் பெற ஜெமினி ஏபிஐ கீயை (API Key) உள்ளிடவும். காலியாக இருந்தால், கணினி சிமுலேட்டர் பயன்முறையில் செயல்படும்.",
+    lblConfigKey: "ஜெமினி API கீ",
+    lblConfigModel: "மாதிரி பதிப்பு",
+    btnCancelSettings: "ரத்துசெய்",
+    btnSaveSettings: "அமைப்புகளைச் சேமிக்கவும்",
+    alertTitle: "பருவமழை வடிகால் பிரச்சாரம் (ஜூலை 2026)",
+    alertDesc: "நகராட்சியால் முக்கிய வடிகால் வாய்க்கால்கள் சுத்தம் செய்யப்படுகின்றன. உடனடியாக நடவடிக்கை எடுக்க \"புகார் அளிக்கவும்\" பக்கத்தைப் பயன்படுத்தி வெள்ளப் பெருக்கை புகாரளிக்கவும்.",
+    accessibilityLabel: "உரை அணுகல்தன்மை",
+    analyticsLabel: "நகராட்சி பகுப்பாய்வு மற்றும் வெளிப்படைத்தன்மை பதிவேடு",
+    lblResolutionRate: "தீர்வு விகிதம்",
+    lblAvgTimeLabel: "சராசரி தீர்வு நேரம்",
+    lblActiveCrewsLabel: "செயலில் உள்ள குழுக்கள்",
+    aiCategorySuggestion: "AI வகை பரிந்துரை",
+    suggestedCategoryLabel: "AI பரிந்துரைத்த வகை:",
+    lblFeedbackTitle: "தீர்வு தரத்தை மதிப்பிடுங்கள்",
+    lblEscalateWarn: "தீர்வில் திருப்தி இல்லையா? மூத்த அதிகாரி மதிப்பாய்வுக்கு இந்த கோப்பை ஆணையாளர் தணிக்கை வாரியத்திற்கு அனுப்பவும்.",
+    btnEscalateGrievance: "வழக்கை மேல்முறையீடு செய்யவும்",
+    categoryLabels: {
+      'Roads & Potholes': 'சாலைகள் மற்றும் பள்ளங்கள்',
+      'Streetlights': 'தெருவிளக்குகள்',
+      'Garbage & Sanitation': 'குப்பை மற்றும் சுகாதாரம்',
+      'Water Supply': 'நீர் விநியோகம்',
+      'Drainage': 'வடிகால்',
+      'Public Nuisance': 'பொது தொல்லை',
+      'Other': 'இதர'
+    },
+    footerTitle: "ஸ்மார்ட் பாரத் போர்டல்",
+    footerDesc: "ஒவ்வொரு குடிமகனுக்கும் வெளிப்படையான, அணுகக்கூடிய மற்றும் டிஜிட்டல் முறையில் உள்ளடக்கிய பொதுச் சேவைகளை வழங்க நகராட்சி வாரியத்தின் அதிகாரப்பூர்வ உற்பத்தி எஐ முயற்சி.",
+    footerLabelInfo: "தகவல்",
+    footerLabelSupport: "ஆதரவு",
+    footerLabelGov: "அரசு இணைப்புகள்",
+    footerCopyright: "© 2026 நகராட்சி கழகம். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
+    // Modal Keys
+    modalAboutTitle: "எங்களைப் பற்றி",
+    modalAboutHtml: `<p style="font-size: 14px; line-height: 1.6; color: var(--ink);">வரவேற்கிறோம் <strong>ஸ்மார்ட் பாரத் குடிமகன் உதவி போர்டல்</strong>.</p>
+                     <p style="font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); margin-top: 12px;">இந்த தளம் நகராட்சி நிர்வாக பணிகளை எளிதாக்க எங்களின் எஐ-உதவியாளரை பயன்படுத்தும் ஒருங்கிணைந்த தளமாகும்.</p>
+                     <p style="font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); margin-top: 12px;">நகராட்சி குடிமக்களுக்கு திறமையான மற்றும் டிஜிட்டல் பாதுகாப்புடன் கூடிய பொது சேவைகளை வழங்குவதே எங்களின் குறிக்கோள்.</p>`,
+    modalContactTitle: "தொடர்பு கொள்ள",
+    modalContactHtml: `<div style="line-height: 1.8; font-size: 14px; color: var(--ink);">
+                         <p style="margin-bottom: 12px;">📞 <strong>நாங்கள் உதவும் எண்:</strong> 1800-345-5678 (24x7 கிடைக்கும்)</p>
+                         <p style="margin-bottom: 12px;">📧 <strong>மின்னஞ்சல் முகவரி:</strong> support@smartbharat.gov.in</p>
+                         <p style="margin-bottom: 12px;">🏢 <strong>தலைமை அலுவலகம்:</strong> நகராட்சி தலைமையகம், விகாஸ் மார்க், புது தில்லி - 110001</p>
+                       </div>`,
+    modalFeedbackTitle: "எங்கள் போர்ட்டலை மதிப்பிடுங்கள்",
+    modalFeedbackComment: "கருத்துக்களை சேர்க்கவும் (விருப்பம்):",
+    modalFeedbackPlaceholder: "சஹாயக் AI உடனான உங்கள் அனுபவத்தை பகிர்ந்து கொள்ளுங்கள்...",
+    modalFeedbackSubmit: "கருத்தை சமர்ப்பிக்கவும்",
+    modalFeedbackSuccess: "உங்கள் கருத்துக்கு நன்றி! போர்ட்டலை மேம்படுத்த இது உதவும்.",
+    modalFaqsTitle: "அடிக்கடி கேட்கப்படும் கேள்விகள்",
+    modalFaqsList: [
+      { q: "பிரச்சினை தீர்க்கப்பட எவ்வளவு காலம் ஆகும்?", a: "தெருவிளக்கு பழுது அல்லது குப்பை சுத்தம் 24-48 மணிநேரத்திற்குள் சரி செய்யப்படும். சாலை பழுதுகள் மற்றும் வடிகால் அடைப்பு பணிகள் 3-5 வேலை நாட்கள் ஆகும்." },
+      { q: "நாங்கள் பதிவேற்றும் ஆவணங்கள் பாதுகாப்பானதா?", a: "ஆம், நிச்சயமாக. ஆவண சரிபார்ப்பு உங்கள் உலாவியில் மட்டுமே இயங்குகிறது, சர்வர்களில் சேமிக்கப்பட மாட்டாது." }
+    ],
+    modalHelpTitle: "உதவி & வழிகாட்டுதல்கள்",
+    modalHelpHtml: `<div style="font-size: 13.5px; line-height: 1.6; color: var(--ink);">
+                      <h4 style="margin: 0 0 8px 0; font-size: 15px;">வழிமுறைகள்:</h4>
+                      <ol style="padding-left: 20px;">
+                        <li>வொய்ஸ் பட்டனை பயன்படுத்தி உங்கள் சொந்த மொழியில் திட்டங்கள் பற்றி பேசிக் கேட்கலாம்.</li>
+                        <li>வழிகாட்டி வரைபடத்தில் இடத்தை குறியிட்டு எளிதாக புகார் அளிக்கலாம்.</li>
+                      </ol>
+                    </div>`
+  },
+  bn: {
+    brandSub: "নাগরিক সহকারী",
+    navhome: "হোম",
+    navassistant: "সহায়ক AI",
+    navreport: "অভিযোগ জানান",
+    navtrack: "অভিযোগ ট্র্যাক করুন",
+    navservices: "পরিষেবা নির্দেশিকা",
+    navdocs: "নথিপত্র সহায়ক",
+    langLabel: "ভাষা",
+    heroTitle: "প্রতিটি নাগরিক কাজের জন্য একটি AI সঙ্গী।",
+    heroSub: "আপনার নিজস্ব ভাষায় প্রশ্ন জিজ্ঞাসা করুন, স্থানীয় সমস্যাগুলির অভিযোগ জানান এবং আপনার অভিযোগ ট্র্যাক করুন।",
+    statOpenLabel: "সক্রিয় অভিযোগ",
+    statResolvedLabel: "মীমাংসিত সমস্যা",
+    statAvail: "সহায়ক অনলাইন",
+    quickActionsLabel: "দ্রুত অ্যাকশন",
+    qa1h: "সহায়ককে জিজ্ঞাসা করুন",
+    qa1p: "সরকারী প্রকল্প, যোগ্যতা এবং অফিস সম্পর্কে তাত্ক্ষণিক উত্তর বাংলা, হিন্দি বা ইংরেজিতে পান।",
+    qa2h: "সমস্যা রিপোর্ট করুন",
+    qa2p: "রাস্তার আলো, আবর্জনা, জলের লিক বা রাস্তার গর্তের মতো সমস্যাগুলি পৌরসভা পোর্টালে রিপোর্ট করুন।",
+    qa3h: "নথিপত্র পরীক্ষা করুন",
+    qa3p: "প্রয়োজনীয় নথির তালিকা খুঁজুন এবং আমাদের চেকলিস্ট সিমুলেটরে খসড়াগুলি পরীক্ষা করুন।",
+    popularLabel: "জনপ্রিয় পরিচয় এবং কল্যাণ পরিষেবা",
+    asstEyebrow: "AI সঙ্গী",
+    asstTitle: "সহায়ক AI",
+    asstSub: "সরকারী প্রকল্প, যোগ্যতা, প্রশাসনিক পদ্ধতি বা স্থানীয় পৌরসভা সম্পর্কে জিজ্ঞাসা করুন - সরাসরি সহায়তা পান।",
+    reportEyebrow: "জনসাধারণের অভিযোগ",
+    reportTitle: "অভিযোগ জানান",
+    reportSub: "পৌরসভা কর্মকর্তাদের জানাতে অভিযোগ দায়ের করুন। ট্র্যাকিং নম্বর এবং লাইভ টাইমলাইন আপডেট পান।",
+    lblCategory: "সমস্যার বিভাগ",
+    lblLocation: "অবস্থান / ল্যান্ডমার্ক",
+    lblDesc: "সমস্যাটি বর্ণনা করুন",
+    lblName: "আপনার নাম (ঐচ্ছিক)",
+    lblPhone: "যোগাযোগ নম্বর (ঐচ্ছিক)",
+    submitBtn: "অভিযোগ জমা দিন",
+    fileNoLabel: "অফিসিয়াল ফাইল ট্র্যাকিং নম্বর",
+    confirmMsg: "আপনার অভিযোগ পৌরসভা সার্ভার রেজিস্ট্রিতে নথিভুক্ত করা হয়েছে। অগ্রগতি ট্র্যাক করতে এই আইডিটি সংরক্ষণ করুন।",
+    fileAnother: "অন্য একটি অভিযোগ দায়ের করুন",
+    trackEyebrow: "অভিযোগের স্থিতি",
+    trackTitle: "অভিযোগ ট্র্যাক করুন",
+    trackSub: "সক্রিয় অভিযোগগুলি খুঁজুন, পৌরসভার অগ্রগতি লগ দেখুন বা মানচিত্রে অবস্থান দেখুন।",
+    trackSearch: "ফাইল আইডি লিখুন (যেমন SB-2026-103847)",
+    trackSearchBtn: "অনুসন্ধান",
+    svcEyebrow: "নির্দেশিকা",
+    svcTitle: "পরিষেবা নির্দেশিকা",
+    svcSub: "সাধারণত ব্যবহৃত নাগরিক পরিষেবা। বিশদ বিবরণ পড়তে কার্ডগুলি নির্বাচন করুন বা সহায়কের সাহায্য নিন।",
+    docEyebrow: "নথিপত্র চেকলিস্ট সহায়ক",
+    docTitle: "কি কি নথি সঙ্গে রাখতে হবে",
+    docSub: "অফিসে বারবার যাওয়া এড়িয়ে চলুন। প্রয়োজনীয় নথিগুলি পরীক্ষা করতে পরিষেবার নামটি টাইপ করুন।",
+    lblDocGoal: "আপনি কোন শংসাপত্র/পরিষেবার জন্য আবেদন করছেন?",
+    docGoalPlaceholder: "যেমন: নতুন পাসপোর্ট, জাতিগত শংসাপত্র, ড্রাইভিং লাইসেন্স নবীকরণ",
+    docSubmit: "প্রয়োজনীয়তা বিশ্লেষণ করুন",
+    chatPlaceholder: "আপনার প্রশ্নটি টাইপ করুন...",
+    chatSend: "পাঠান ➔",
+    emptyTrack: "এই ডিভাইস থেকে এখনও কোনও অভিযোগ দায়ের করা হয়নি। অভিযোগ দায়ের করতে 'অভিযোগ জানান' পৃষ্ঠায় যান।",
+    notFound: "সেই ট্র্যাকিং নম্বরে কোনও পৌরসভা ফাইল পাওয়া যায়নি।",
+    thisArea: "আপনার ওয়ার্ডের সাম্প্রতিক অভিযোগ",
+    settingsText: "AI সেটিংস",
+    themeTextDark: "ডার্ক মোড",
+    themeTextLight: "লাইট মোড",
+    lblMapMarker: "ওয়ার্ড মানচিত্রে অবস্থান পিন করুন (নির্বাচন করতে ক্লিক করুন)",
+    mapLabelText: "ওয়ার্ড মানচিত্র (মধ্য জেলা)",
+    legPending: "মুলতুবি",
+    legProgress: "সক্রিয়",
+    legResolved: "সম্পন্ন",
+    lblImage: "সমস্যার ছবি (ঐচ্ছিক)",
+    uploadTextLabel: "ছবিটি এখানে টেনে এনে ছেড়ে দিন, অথবা আপলোড করতে ক্লিক করুন",
+    lblTimelinePhoto: "সংযুক্ত ছবি",
+    lblTimelineLog: "পৌরসভার পদক্ষেপের টাইমলাইন",
+    stepTitle1: "অভিযোগ নথিভুক্ত হয়েছে",
+    stepTitle2: "প্রকৌশলী নিযুক্ত",
+    stepTitle3: "সংশোধনমূলক কাজ সক্রিয়",
+    stepTitle4: "সমস্যা সমাধান হয়েছে",
+    muteStatusOn: "শব্দ চালু",
+    muteStatusOff: "শব্দ বন্ধ",
+    asstStatusLabel: "সক্রিয় এবং অনলাইন",
+    modalConfigTitle: "AI ইঞ্জিন কনফিগারেশন",
+    modalConfigDesc: "জে মিনি AI থেকে সরাসরি উত্তর পেতে আপনার জে মিনি API কী লিখুন। খালি থাকলে, সিস্টেমটি অফলাইন সিমুলেটর মোডে চলবে।",
+    lblConfigKey: "জে মিনি API কী",
+    lblConfigModel: "মডেল সংস্করণ",
+    btnCancelSettings: "বাতিল করুন",
+    btnSaveSettings: "সেটিংস সংরক্ষণ করুন",
+    alertTitle: "বর্ষাকালীন জল নিষ্কাশন অভিযান (জুলাই 2026)",
+    alertDesc: "পৌরসভা প্রধান নর্দমাগুলি পরিষ্কার করছে। অবিলম্বে ব্যবস্থা গ্রহণের জন্য জল জমার রিপোর্ট করুন।",
+    accessibilityLabel: "পাঠ্য অ্যাক্সেসিবিলিটি",
+    analyticsLabel: "পৌরসভার বিশ্লেষণ ও স্বচ্ছতার খতিয়ান",
+    lblResolutionRate: "সমাধানের হার",
+    lblAvgTimeLabel: "গড় সমাধানের সময়",
+    lblActiveCrewsLabel: "সক্রিয় পরিষেবা দল",
+    aiCategorySuggestion: "AI প্রস্তাবিত বিভাগ",
+    suggestedCategoryLabel: "AI প্রস্তাবিত বিভাগ:",
+    lblFeedbackTitle: "সমাধানের গুণমান মূল্যায়ন করুন",
+    lblEscalateWarn: "পদক্ষেপে সন্তুষ্ট নন? পর্যালোচনার জন্য এই ফাইলটি কমিশনার অডিট বোর্ডে প্রেরণ করুন।",
+    btnEscalateGrievance: "মামলা আপিল করুন",
+    categoryLabels: {
+      'Roads & Potholes': 'রাস্তা এবং গর্ত',
+      'Streetlights': 'রাস্তার আলো',
+      'Garbage & Sanitation': 'আবর্জনা ও পরিচ্ছন্নতা',
+      'Water Supply': 'জল সরবরাহ',
+      'Drainage': 'নর্দমা ও বন্যা',
+      'Public Nuisance': 'পাবলিক উপদ্রব',
+      'Other': 'অন্যান্য'
+    },
+    footerTitle: "স্মার্ট ভারত পোর্টাল",
+    footerDesc: "প্রতিটি নাগরিককে স্বচ্ছ, অ্যাক্সেসযোগ্য এবং ডিজিটালভাবে অন্তর্ভুক্ত পাবলিক পরিষেবা প্রদানের জন্য পৌরসভা বোর্ডের একটি অফিসিয়াল জেনারেটিভ এআই উদ্যোগ।",
+    footerLabelInfo: "তথ্য",
+    footerLabelSupport: "সহায়তা",
+    footerLabelGov: "সরকারী লিঙ্ক",
+    footerCopyright: "© 2026 পৌরসভা কর্পোরেশন। সর্বস্বত্ব সংরক্ষিত।",
+    // Modal Keys
+    modalAboutTitle: "আমাদের সম্পর্কে",
+    modalAboutHtml: `<p style="font-size: 14px; line-height: 1.6; color: var(--ink);">স্বাগতম <strong>স্মার্ট ভারত নাগরিক পোর্টাল</strong>-এ।</p>
+                     <p style="font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); margin-top: 12px;">এই পোর্টালটি নাগরিক সেবা ও পৌরসভা কাজ ত্বরান্বিত করতে এআই-সহায়কের দ্বারা নির্মিত একটি ডিজিটাল প্ল্যাটফর্ম।</p>`,
+    modalContactTitle: "যোগাযোগ",
+    modalContactHtml: `<div style="line-height: 1.8; font-size: 14px; color: var(--ink);">
+                         <p style="margin-bottom: 12px;">📞 <strong>হেল্পলাইন:</strong> 1800-345-5678 (২৪x৭ উপলব্ধ)</p>
+                         <p style="margin-bottom: 12px;">📧 <strong>ইমেল:</strong> support@smartbharat.gov.in</p>
+                         <p style="margin-bottom: 12px;">🏢 <strong>প্রধান কার্যালয়:</strong> পৌর কর্পোরেশন ভবন, বিকাশ মার্গ, নতুন দিল্লি - ১১০০০১</p>
+                       </div>`,
+    modalFeedbackTitle: "মতামত দিন",
+    modalFeedbackComment: "মন্তব্য যোগ করুন (ঐচ্ছিক):",
+    modalFeedbackPlaceholder: "আপনার মতামত লিখুন...",
+    modalFeedbackSubmit: "মতামত জমা দিন",
+    modalFeedbackSuccess: "মতামতের জন্য ধন্যবাদ! এটি আমাদের পোর্টাল উন্নত করতে সাহায্য করবে।",
+    modalFaqsTitle: "সাধারণ প্রশ্নাবলী (FAQs)",
+    modalFaqsList: [
+      { q: "অভিযোগ সমাধান হতে কত সময় লাগে?", a: "রাস্তার আলো ও আবর্জনার সমস্যা ২৪-৪৮ ঘণ্টার মধ্যে সমাধান করা হয়। জল এবং ড্রেনের সমস্যা ৩-৫ কার্যদিবস সময় নিতে পারে।" },
+      { q: "আমার ফাইলগুলি কি সুরক্ষিত থাকবে?", a: "হ্যাঁ, সম্পূর্ণভাবে। আমাদের ভেরিফিকেশন সিস্টেম সম্পূর্ণভাবে ব্রাউজারে কাজ করে ও কোনো সার্ভারে ফাইল আপলোড হয় না।" }
+    ],
+    modalHelpTitle: "সহায়তা ও নির্দেশাবলী",
+    modalHelpHtml: `<div style="font-size: 13.5px; line-height: 1.6; color: var(--ink);">
+                      <h4>ব্যবহার বিধি:</h4>
+                      <ol style="padding-left: 20px;">
+                        <li>সহায়কের সাথে ভয়েস পিন ব্যবহার করে নিজের ভাষায় কথা বলুন।</li>
+                        <li>অভিযোগ জানাতে মানচিত্রের সঠিক স্থানে পিন করুন ও ছবি সংযুক্ত করুন।</li>
+                      </ol>
+                    </div>`
   }
 };
+
 
 // ----------------------------------------------------
 // PRE-DEFINED MOCK DATA & KNOWLEDGE SYSTEM (LOCAL FALLBACK)
@@ -603,6 +953,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Render map on startup
   renderWardMap();
+
+  // KIOSK MODE SECURITY TIMERS & STORAGE HOOKS
+  window.addEventListener('beforeunload', () => {
+    if (state.kioskMode) {
+      localStorage.removeItem('sb_gemini_api_key');
+    }
+  });
+
+  // Track interactions for 5-minute inactivity auto-clear
+  const resetInteractionTimer = () => {
+    state.lastInteractionTime = Date.now();
+  };
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, resetInteractionTimer, { passive: true });
+  });
+
+  // Check inactivity every 10 seconds
+  setInterval(() => {
+    const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes
+    if (state.kioskMode && (Date.now() - state.lastInteractionTime > INACTIVITY_LIMIT)) {
+      localStorage.removeItem('sb_gemini_api_key');
+      alert(state.currentLang === 'hi'
+        ? "⚠️ किओस्क सत्र समय सीमा समाप्त: सुरक्षा कारणों से आपकी जेमिनी एपीआई कुंजी को हटा दिया गया है।"
+        : "⚠️ Kiosk Session Timeout: You have been inactive for 5 minutes. For security, your Gemini API Key has been wiped from this kiosk.");
+      window.location.reload();
+    }
+  }, 10000);
 });
 
 // ----------------------------------------------------
@@ -836,6 +1213,77 @@ function goto(viewName) {
 // ----------------------------------------------------
 // AI CONFIGURATION SETTINGS MODAL
 // ----------------------------------------------------
+const MOCK_GRIEVANCES = [
+  {
+    id: "GR-9081",
+    title: "Severe Water Supply Leakage",
+    desc: "A major pipeline burst near the community temple. Water has been flooding the street since yesterday morning.",
+    category: "water",
+    ward: "Ward 4 (Kalyan Nagar)",
+    coords: { x: 120, y: 190 },
+    reporter: "Rajesh Kumar",
+    phone: "9876543210",
+    status: "resolved",
+    timestamp: new Date(Date.now() - 172800000).toLocaleString(),
+    imageUrl: "",
+    timeline: [
+      { step: "submitted", label: "Grievance Logged", time: new Date(Date.now() - 172800000).toLocaleString(), desc: "Citizen Rajesh Kumar reported water leakage.", active: true },
+      { step: "allocated", label: "Officer Appointed", time: new Date(Date.now() - 150000000).toLocaleString(), desc: "Assigned to Ward Engineer S. Patil.", active: true },
+      { step: "progress", label: "Repair Underway", time: new Date(Date.now() - 86400000).toLocaleString(), desc: "Plumbing crew dispatched. Main valve closed.", active: true },
+      { step: "resolved", label: "Case Resolved", time: new Date(Date.now() - 43200000).toLocaleString(), desc: "Pipeline patch completed and tested.", active: true }
+    ],
+    rating: 5,
+    escalated: false
+  },
+  {
+    id: "GR-8932",
+    title: "Broken Streetlight near School",
+    desc: "The streetlight right outside Govt High School is broken. It is pitch dark at night, making it unsafe for kids.",
+    category: "streetlight",
+    ward: "Ward 9 (Rajajinagar)",
+    coords: { x: 310, y: 220 },
+    reporter: "Sunita Deshmukh",
+    phone: "9911223344",
+    status: "progress",
+    timestamp: new Date(Date.now() - 86400000).toLocaleString(),
+    imageUrl: "",
+    timeline: [
+      { step: "submitted", label: "Grievance Logged", time: new Date(Date.now() - 86400000).toLocaleString(), desc: "Citizen Sunita logged streetlight failure.", active: true },
+      { step: "allocated", label: "Officer Appointed", time: new Date(Date.now() - 50000000).toLocaleString(), desc: "Assigned to Electrical Inspector Amit Roy.", active: true },
+      { step: "progress", label: "Repair Underway", time: new Date(Date.now() - 20000000).toLocaleString(), desc: "Replacement bulb and wiring check scheduled.", active: true },
+      { step: "resolved", label: "Case Resolved", time: "", desc: "Pending field verification.", active: false }
+    ],
+    rating: null,
+    escalated: false
+  },
+  {
+    id: "GR-7762",
+    title: "Clogged Drain Overflows on Road",
+    desc: "Heavy rain has caused the main storm drain to overflow. Wastewater is spilling into the marketplace causing foul smell.",
+    category: "garbage",
+    ward: "Ward 12 (Metro Bazaar)",
+    coords: { x: 420, y: 150 },
+    reporter: "Anwar Shaikh",
+    phone: "9822334455",
+    status: "resolved",
+    timestamp: new Date(Date.now() - 259200000).toLocaleString(),
+    imageUrl: "",
+    timeline: [
+      { step: "submitted", label: "Grievance Logged", time: new Date(Date.now() - 259200000).toLocaleString(), desc: "Reported drainage clogging in bazaar.", active: true },
+      { step: "allocated", label: "Officer Appointed", time: new Date(Date.now() - 200000000).toLocaleString(), desc: "Assigned to Sanitation Inspector Meena Rao.", active: true },
+      { step: "progress", label: "Repair Underway", time: new Date(Date.now() - 172800000).toLocaleString(), desc: "Cleaning crews cleared silt blockages.", active: true },
+      { step: "resolved", label: "Case Resolved", time: new Date(Date.now() - 86400000).toLocaleString(), desc: "Silt cleared. Water flow normalized.", active: true }
+    ],
+    rating: 2,
+    escalated: true,
+    escalationTimeline: {
+      timestamp: new Date(Date.now() - 72000000).toLocaleString(),
+      reason: "Satisfaction rating of 2 stars submitted. Escalated to Commissioner Auditor Board.",
+      auditor: "Nodal Supervisor (Board 3)"
+    }
+  }
+];
+
 function initSettingsModal() {
   const modal = document.getElementById('settingsModal');
   const openBtn = document.getElementById('openSettingsBtn');
@@ -844,10 +1292,24 @@ function initSettingsModal() {
   const saveBtn = document.getElementById('btnSaveSettings');
   const keyInput = document.getElementById('geminiApiKeyInput');
   const modelSelect = document.getElementById('geminiApiModel');
+  const kioskChk = document.getElementById('chkKioskMode');
+  
+  // Visibility toggle handler
+  const toggleVisibleBtn = document.getElementById('toggleApiKeyVisibility');
+  toggleVisibleBtn.addEventListener('click', () => {
+    if (keyInput.type === 'password') {
+      keyInput.type = 'text';
+      toggleVisibleBtn.textContent = '🔒';
+    } else {
+      keyInput.type = 'password';
+      toggleVisibleBtn.textContent = '👁️';
+    }
+  });
 
   openBtn.addEventListener('click', () => {
     keyInput.value = state.apiKey;
     modelSelect.value = state.apiModel;
+    kioskChk.checked = state.kioskMode;
     modal.classList.add('active');
   });
 
@@ -858,8 +1320,12 @@ function initSettingsModal() {
   saveBtn.addEventListener('click', () => {
     state.apiKey = keyInput.value.trim();
     state.apiModel = modelSelect.value;
+    state.kioskMode = kioskChk.checked;
+    
     localStorage.setItem('sb_gemini_api_key', state.apiKey);
     localStorage.setItem('sb_gemini_api_model', state.apiModel);
+    localStorage.setItem('sb_kiosk_mode', state.kioskMode);
+    
     closeModal();
     
     // Add success chat bubble if Assistant is active
@@ -867,6 +1333,78 @@ function initSettingsModal() {
       addMessage(state.currentLang === 'hi' 
         ? "AI इंजन सेटिंग्स सफलतापूर्वक अपडेट हो गई हैं! लाइव मॉडल अब उपलब्ध है।" 
         : "AI configuration saved successfully! The live model is now loaded.", 'bot');
+    }
+  });
+
+  // Diagnostic connection validator
+  const testBtn = document.getElementById('btnTestConfig');
+  testBtn.addEventListener('click', async () => {
+    const key = keyInput.value.trim();
+    const model = modelSelect.value;
+    if (!key) {
+      alert("Please enter an API Key to test.");
+      return;
+    }
+    
+    testBtn.textContent = "⏳ Testing...";
+    testBtn.disabled = true;
+    
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Hello, respond with exactly "OK"' }] }]
+        })
+      });
+      
+      if (res.ok) {
+        testBtn.textContent = "✓ Connected!";
+        testBtn.style.color = "#0B6E4F";
+        testBtn.style.borderColor = "#0B6E4F";
+        alert("✓ Connection successful! Your Gemini API Key is fully active.");
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        const msg = errJson.error?.message || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+    } catch (e) {
+      testBtn.textContent = "✗ Failed";
+      testBtn.style.color = "#d93838";
+      testBtn.style.borderColor = "#d93838";
+      alert(`✗ Connection failed: ${e.message}`);
+    } finally {
+      setTimeout(() => {
+        testBtn.textContent = "⚡ Test Connection";
+        testBtn.style.color = "";
+        testBtn.style.borderColor = "";
+        testBtn.disabled = false;
+      }, 3000);
+    }
+  });
+
+  // Load Demo Data
+  const demoBtn = document.getElementById('btnLoadDemoData');
+  demoBtn.addEventListener('click', () => {
+    state.complaints = [...MOCK_GRIEVANCES, ...state.complaints.filter(c => !c.id.startsWith('GR-'))];
+    localStorage.setItem('sb_complaints', JSON.stringify(state.complaints));
+    
+    // Refresh views if methods are loaded
+    if (typeof renderComplaints === 'function') renderComplaints();
+    if (typeof renderWardMap === 'function') renderWardMap();
+    if (typeof updateDashboardMetrics === 'function') updateDashboardMetrics();
+    
+    alert("🚀 Demo grievances loaded successfully! Go to 'Track Grievance' to test timeline steps and satisfaction ratings.");
+    closeModal();
+  });
+
+  // Wipe Storage
+  const wipeBtn = document.getElementById('btnWipeStorage');
+  wipeBtn.addEventListener('click', () => {
+    if (confirm("⚠️ Are you sure you want to wipe all local data? This will clear your saved API Key, all complaints, and configuration settings.")) {
+      localStorage.clear();
+      alert("🗑️ Local cache cleared successfully. Reloading...");
+      window.location.reload();
     }
   });
 }
@@ -1059,6 +1597,15 @@ function speakAloud(text) {
 }
 
 async function handleSendMessage() {
+  const now = Date.now();
+  if (now - state.lastMessageSentTime < 2000) {
+    alert(state.currentLang === 'hi'
+      ? "⚠️ सुरक्षा गार्ड: स्पैम रोकने के लिए कृपया संदेशों के बीच कम से कम 2 सेकंड प्रतीक्षा करें।"
+      : "⚠️ Security Guard: Please wait at least 2 seconds between messages to prevent request spam.");
+    return;
+  }
+  state.lastMessageSentTime = now;
+
   const input = document.getElementById('chatInput');
   const query = input.value.trim();
   if (!query) return;
