@@ -10,10 +10,12 @@ Smart Bharat is a premium, Generative AI-powered web platform designed to simpli
 *   **Direct REST Integration**: Connects to the **Google Gemini API** (supporting `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.5-flash`, `gemini-2.0-flash`, etc.) using a direct REST endpoint. Passing the key in the URL (`?key=...`) bypasses custom header stripping rules in privacy-focused browsers like **Brave**.
 *   **Self-Healing Diagnostics**: If connection issues occur, the client automatically runs `ModelService.ListModels` live to list all permitted models for your exact key.
 *   **Dual-Mode fallback**: Runs on a high-fidelity **Offline NLP Simulator** using matching local rules if no API key is provided.
-*   **Active Language Lock**: The AI Companion dynamically reads the website's language toggle (`state.currentLang`) to force responses in the correct language (English or Hindi) matching the citizen's active view.
-*   **Speech Accessibility**:
-    *   🎤 **Speech-to-Text (STT)**: Voice-input query box.
-    *   🔊 **Text-to-Speech (TTS)**: Audibly reads back AI responses with mute toggles.
+*   **Active Multilingual Language Lock**: The AI Companion dynamically reads the website's language toggle (`state.currentLang`) to force responses in the selected language (**English**, **Hindi (हिंदी)**, **Tamil (தமிழ்)**, or **Bengali (বাংলা)**) matching the citizen's active view.
+*   **Speech Accessibility & Voice Synthesis**:
+    *   🎤 **Speech-to-Text (STT)**: Voice-input query box matching the selected language (`en-IN`, `hi-IN`, `ta-IN`, `bn-IN`).
+    *   🔊 **Text-to-Speech (TTS)**: Audibly reads back AI responses in the chosen language.
+    *   ⚙️ **Robust Voice Matching**: Normalizes case and delimiter characters (e.g. `ta`, `ta-IN`, `ta_IN`) to dynamically locate matching system voices on the user's OS.
+    *   ⚠️ **Speech Pack Diagnostics Toast**: Renders a floating visual warning if a user attempts to listen in a language (like Hindi, Tamil, or Bengali) that lacks downloaded native speech packages on the client OS, or if browser shields (such as Brave's fingerprinting blocker) restrict voice enumeration, detailing how to enable them.
 
 ### 2. ⚠️ Public Grievance (Report an Issue)
 *   **Interactive Ward Map**: Canvas-based municipal road maps. Pin locations to automatically capture `X, Y` coordinates.
@@ -38,7 +40,7 @@ Smart Bharat is a premium, Generative AI-powered web platform designed to simpli
 
 ### 7. 🔗 Website Footer Links & Support Modals
 *   **Standard Website Footer**: Premium footer links mapping *About Us*, *Contact Us*, *Feedback*, *FAQs*, and *Help* sections.
-*   **Localized Overlays**: Clicking a footer link opens an interactive overlay modal (`#infoModal`) displaying translation-compliant content (English/Hindi):
+*   **Localized Overlays**: Clicking a footer link opens an interactive overlay modal (`#infoModal`) displaying translation-compliant content (**English**, **Hindi**, **Tamil**, or **Bengali**):
     *   *Feedback*: Interactive star-rating and comment submission form.
     *   *FAQs*: Accordion cards with slide-down panels.
     *   *Help*: Step-by-step guidance manual.
