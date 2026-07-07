@@ -1089,10 +1089,7 @@ async function handleSendMessage() {
   try {
     let reply = '';
     if (state.apiKey) {
-      // LIVE GENAI GEMINI SDK MODE
-      const genAI = new GoogleGenerativeAI(state.apiKey);
-      const model = genAI.getGenerativeModel({ model: state.apiModel });
-      
+      // LIVE GENAI GEMINI DIRECT REST API CALL (Bypasses custom header stripping issues in Brave)
       const systemPrompt = `You are Sahayak, a helpful civic companion on the Smart Bharat platform.
       Rules:
       - Answer citizen questions about Indian government services (Aadhaar, PAN, Passport, Ration, Voter ID, Welfare Schemes, Municipal grievances, certificates).
@@ -1100,13 +1097,35 @@ async function handleSendMessage() {
       - Answer in the user's primary writing language (English, Hindi, or Hinglish).
       - Give structured answers using lists and bold tags. Be direct and avoid technical legalese.`;
 
-      const contents = [
-        { role: 'user', parts: [{ text: `${systemPrompt}\n\nUser Question: ${query}` }] }
-      ];
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${state.apiModel}:generateContent?key=${state.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `${systemPrompt}\n\nUser Question: ${query}`
+                }
+              ]
+            }
+          ]
+        })
+      });
 
-      const result = await model.generateContent({ contents });
-      const response = await result.response;
-      reply = response.text();
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        const errMsg = errJson.error?.message || `HTTP error ${response.status}`;
+        throw new Error(errMsg);
+      }
+
+      const resData = await response.json();
+      reply = resData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!reply) {
+        throw new Error("Empty response received from AI engine.");
+      }
     } else {
       // HIGH-FIDELITY OFFLINE LOCAL NLP SIMULATION
       await new Promise(resolve => setTimeout(resolve, 800)); // Simulated network latency
@@ -1118,9 +1137,18 @@ async function handleSendMessage() {
   } catch (error) {
     console.error("AI engine failure:", error);
     loadingWrap.remove();
+    const errorDetails = error.message || error.toString();
+    
+    let advice = "";
+    if (errorDetails.toLowerCase().includes("quota") || errorDetails.includes("429")) {
+      advice = state.currentLang === 'hi'
+        ? "\n\n💡 **सलाह:** ऐसा लगता है कि इस मॉडल के लिए मुफ़्त कोटा समाप्त या ब्लॉक हो गया है। कृपया शीर्ष बार पर **AI Config** पर क्लिक करें और **Gemini 1.5 Flash** मॉडल चुनें।"
+        : "\n\n💡 **Tip:** It looks like you have hit the free tier quota limit for this model. Please open **AI Config** at the top and switch the model version to **Gemini 1.5 Flash (Recommended)**.";
+    }
+
     const errorMsg = state.currentLang === 'hi'
-      ? "जेमिनी एपीआई से संपर्क करने में समस्या हुई। कृपया जांचें कि आपकी API Key मान्य है या सिम्युलेटर का उपयोग करने के लिए इसे सेटिंग्स में हटा दें।"
-      : "Error connecting to Gemini API. Please verify that your API Key is valid or clear it from the AI Config settings to use local offline simulation.";
+      ? `एआई इंजन विफलता: ${errorDetails}${advice}\n\nकृपया जांचें कि आपकी API Key मान्य है या सिम्युलेटर का उपयोग करने के लिए इसे सेटिंग्स में हटा दें।`
+      : `AI Engine Failure: ${errorDetails}${advice}\n\nPlease verify that your API Key is valid or clear it from the AI Config settings to use local offline simulation.`;
     addMessage(errorMsg, 'bot');
   } finally {
     sendBtn.disabled = false;
