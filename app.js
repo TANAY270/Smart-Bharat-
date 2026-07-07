@@ -7,7 +7,7 @@ let state = {
   currentLang: 'en',
   theme: 'light',
   apiKey: localStorage.getItem('sb_gemini_api_key') || '',
-  apiModel: localStorage.getItem('sb_gemini_api_model') || 'gemini-1.5-flash',
+  apiModel: localStorage.getItem('sb_gemini_api_model') || 'gemini-2.5-flash',
   complaints: [],
   selectedComplaintId: null,
   activeView: 'home',
@@ -577,12 +577,6 @@ function generateStructuredServiceText(t, lang) {
 // INITIALIZATION & EVENT BINDINGS
 // ----------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
-  // Correct model selection versions mapping if saved key exists
-  if (state.apiModel && (state.apiModel.includes('2.5-flash') || state.apiModel.includes('2.5-pro'))) {
-    state.apiModel = 'gemini-1.5-flash';
-    localStorage.setItem('sb_gemini_api_model', 'gemini-1.5-flash');
-  }
-
   // Load complaints from localStorage or initialize with defaults
   const stored = localStorage.getItem('sb_complaints');
   if (stored) {
@@ -1116,9 +1110,28 @@ async function handleSendMessage() {
       });
 
       if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        const errMsg = errJson.error?.message || `HTTP error ${response.status}`;
-        throw new Error(errMsg);
+        let errMsg = `HTTP error ${response.status}`;
+        try {
+          const errJson = await response.json();
+          errMsg = errJson.error?.message || errMsg;
+        } catch (e) {}
+        
+        // Dynamically query available models using the key for direct client-side diagnostics
+        let listStr = "";
+        try {
+          const listRes = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${state.apiKey}`);
+          if (listRes.ok) {
+            const listJson = await listRes.json();
+            const models = listJson.models || [];
+            listStr = "\n\n📋 **Permitted models for your API Key:**\n" + models.map(m => `- \`${m.name.replace('models/', '')}\``).join('\n');
+          } else {
+            listStr = `\n\n❌ **ModelService.ListModels failed**: Status ${listRes.status}`;
+          }
+        } catch (le) {
+          listStr = `\n\n❌ **ModelService.ListModels failure**: ${le.message}`;
+        }
+
+        throw new Error(errMsg + listStr);
       }
 
       const resData = await response.json();
