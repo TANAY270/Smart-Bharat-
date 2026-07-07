@@ -7,8 +7,10 @@ Smart Bharat is a premium, Generative AI-powered web platform designed to simpli
 ## 🌟 Key Features
 
 ### 1. 💬 Sahayak AI Companion
-*   **Dual-Mode Engine**: Connects to the **Google Gemini API** (`gemini-2.5-flash` or `gemini-2.5-pro`) for live response streams, or runs on a high-fidelity **Offline NLP Simulator** using matching local rules if no API key is provided.
-*   **Multilingual Support**: Real-time language detection and translations between **English**, **Hindi**, and **Hinglish**.
+*   **Direct REST Integration**: Connects to the **Google Gemini API** (supporting `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.5-flash`, `gemini-2.0-flash`, etc.) using a direct REST endpoint. Passing the key in the URL (`?key=...`) bypasses custom header stripping rules in privacy-focused browsers like **Brave**.
+*   **Self-Healing Diagnostics**: If connection issues occur, the client automatically runs `ModelService.ListModels` live to list all permitted models for your exact key.
+*   **Dual-Mode fallback**: Runs on a high-fidelity **Offline NLP Simulator** using matching local rules if no API key is provided.
+*   **Active Language Lock**: The AI Companion dynamically reads the website's language toggle (`state.currentLang`) to force responses in the correct language (English or Hindi) matching the citizen's active view.
 *   **Speech Accessibility**:
     *   🎤 **Speech-to-Text (STT)**: Voice-input query box.
     *   🔊 **Text-to-Speech (TTS)**: Audibly reads back AI responses with mute toggles.
@@ -22,15 +24,24 @@ Smart Bharat is a premium, Generative AI-powered web platform designed to simpli
 ### 3. 📂 Status Tracker & Action Simulator
 *   **Log Timelines**: Track complaints from submission, to inspector allocation, through active site repair, to resolution.
 *   **Officer Simulation**: Allows administrators or testers to simulate official updates, updating timelines and changing map coordinate colors.
-*   **Satisfaction Audit**: Citizen ratings (1-5 stars) upon resolution. Rates of 1 or 2 stars activate an **Escalate Case** process, re-opening the file and assigning it to the Senior Commissioner Auditor Board.
+*   **Satisfaction Audit**: Citizen ratings (1-5 stars) upon resolution. Rates of 1 or 2 stars activate an **Escalate Case** process, re-opening the file and assigning it to the Senior Nodal Supervisor (Commissioner Auditor Board).
 
-### 4. 📄 Document Helper & verification Lab
+### 4. 🏛️ Municipal Analytics Ledger
+*   **Transparency Dashboard**: Displays live municipal metrics on the Home page, including **Resolution Rates (87.4%)**, **Average Resolution Timelines (3.2 Days)**, and **Active Service Crews** to build public trust.
+
+### 5. 📂 Document Helper & Verification Lab
 *   **Checklist Compiler**: Renders mandatory checklist requirements and schedules for citizenship services (Aadhaar, PAN, Passport, Ration Card, Voter ID, Income Certificate).
 *   **Verification Lab**: Drop dummy files (e.g. name a text file `aadhaar_card.pdf` or `photo.jpg`) and the app's heuristic parser checks it off the list.
 
-### 5. ♿ Accessibility Toolbar
-*   **Font Size Adjuster**: Interactive buttons (`A+`, `A`, `A-`) in the sidebar scale the text size up to 130% and down to 85% to help elderly or visually impaired citizens.
-*   **Dark Mode**: Contrast-compliant slate layout with glassmorphic cards.
+### 6. ♿ Accessibility Toolbar
+*   **Dynamic Typography Scaling**: Custom buttons (`A+`, `A`, `A-`) in the top navigation header set a `--font-scale` variable on the document root, adjusting the sizes of all elements from 85% to 130% dynamically.
+
+### 7. 🔗 Website Footer Links & Support Modals
+*   **Standard Website Footer**: Premium footer links mapping *About Us*, *Contact Us*, *Feedback*, *FAQs*, and *Help* sections.
+*   **Localized Overlays**: Clicking a footer link opens an interactive overlay modal (`#infoModal`) displaying translation-compliant content (English/Hindi):
+    *   *Feedback*: Interactive star-rating and comment submission form.
+    *   *FAQs*: Accordion cards with slide-down panels.
+    *   *Help*: Step-by-step guidance manual.
 
 ---
 
@@ -38,7 +49,7 @@ Smart Bharat is a premium, Generative AI-powered web platform designed to simpli
 *   **Core Structure**: Semantic HTML5.
 *   **Styling**: Vanilla CSS3 (custom HSL variables, responsive grids, and transitions).
 *   **Logic**: ES6+ Javascript Modules.
-*   **AI Integration**: `@google/generative-ai` SDK.
+*   **AI Integration**: Google Gemini API via REST.
 *   **Tooling**: Vite (hot module reloading, production bundling).
 
 ---
@@ -58,7 +69,7 @@ npm install
 ```bash
 npm run dev
 ```
-The server will start at **http://localhost:5173/**. You can open this URL in any modern web browser (including Brave, Chrome, Safari, or Edge).
+The server will start at **http://localhost:5173/**. Open this URL in Brave or any modern web browser.
 
 ### 3. Build for Production
 ```bash
@@ -76,10 +87,13 @@ npm run preview
 ## 📂 Project Structure
 ```text
 Smart Bharat/
-├── index.html        # Main SPA interface, layouts, and modals
-├── styles.css        # Theme variables, responsive layouts, and keyframe animations
-├── app.js            # Main application logic, SDK, state, and simulators
+├── index.html        # Main SPA HTML interface, layouts, and modals
+├── styles.css        # Theme variables, responsive layouts, header, footer, and animations
+├── app.js            # Main application logic, REST fetch, state, and simulators
 ├── package.json      # Dependencies and dev server configurations
+├── netlify.toml      # Build rules and SPA redirects configuration for Netlify
+├── vercel.json       # Router rewrites configuration for Vercel
+├── firebase.json     # Public folder and SPA rewrites for Firebase Hosting
 └── README.md         # Documentation
 ```
 
