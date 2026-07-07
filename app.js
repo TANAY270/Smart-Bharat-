@@ -1088,7 +1088,7 @@ function applyLang() {
   document.getElementById('uploadTextLabel').textContent = d.uploadTextLabel;
 
   // Confirmation panel
-  document.getElementById('stampText').textContent = state.currentLang === 'hi' ? 'दर्ज हुआ' : 'Submitted';
+  document.getElementById('stampText').textContent = state.currentLang === 'hi' ? 'दर्ज हुआ' : (state.currentLang === 'ta' ? 'பதிவு செய்யப்பட்டது' : (state.currentLang === 'bn' ? 'জমা দেওয়া হয়েছে' : 'Submitted'));
   document.getElementById('fileNoLabel').textContent = d.fileNoLabel;
   document.getElementById('confirmMsg').textContent = d.confirmMsg;
   document.getElementById('fileAnother').textContent = d.fileAnother;
@@ -1149,11 +1149,12 @@ function applyLang() {
   document.getElementById('footerLabelGov').textContent = d.footerLabelGov;
   document.getElementById('footerCopyright').textContent = d.footerCopyright;
 
-  document.getElementById('footerLinkAbout').textContent = state.currentLang === 'hi' ? 'हमारे बारे में' : 'About Us';
-  document.getElementById('footerLinkContact').textContent = state.currentLang === 'hi' ? 'संपर्क करें' : 'Contact Us';
-  document.getElementById('footerLinkFeedback').textContent = state.currentLang === 'hi' ? 'प्रतिक्रिया' : 'Feedback';
-  document.getElementById('footerLinkFaqs').textContent = state.currentLang === 'hi' ? 'अक्सर पूछे जाने वाले प्रश्न' : 'FAQs';
-  document.getElementById('footerLinkHelp').textContent = state.currentLang === 'hi' ? 'सहायता एवं दिशा-निर्देश' : 'Help & Guidelines';
+  const lang = state.currentLang;
+  document.getElementById('footerLinkAbout').textContent = lang === 'hi' ? 'हमारे बारे में' : (lang === 'ta' ? 'எங்களைப் பற்றி' : (lang === 'bn' ? 'আমাদের সম্পর্কে' : 'About Us'));
+  document.getElementById('footerLinkContact').textContent = lang === 'hi' ? 'संपर्क करें' : (lang === 'ta' ? 'தொடர்பு கொள்ள' : (lang === 'bn' ? 'যোগাযোগ' : 'Contact Us'));
+  document.getElementById('footerLinkFeedback').textContent = lang === 'hi' ? 'प्रतिक्रिया' : (lang === 'ta' ? 'கருத்து' : (lang === 'bn' ? 'มতামত' : 'Feedback'));
+  document.getElementById('footerLinkFaqs').textContent = lang === 'hi' ? 'अक्सर पूछे जाने वाले प्रश्न' : (lang === 'ta' ? 'அடிக்கடி கேட்கப்படும் கேள்விகள்' : (lang === 'bn' ? 'সাধারণ প্রশ্নাবলী' : 'FAQs'));
+  document.getElementById('footerLinkHelp').textContent = lang === 'hi' ? 'सहायता एवं दिशा-निर्देश' : (lang === 'ta' ? 'உதவி & வழிகாட்டுதல்கள்' : (lang === 'bn' ? 'সহায়তা ও নির্দেশাবলী' : 'Help & Guidelines'));
 
   // Map render and chips update
   renderPopularGrid();
@@ -1162,19 +1163,23 @@ function applyLang() {
   renderSuggestChips();
 }
 
-document.getElementById('btn-en').onclick = () => {
-  state.currentLang = 'en';
-  document.getElementById('btn-en').classList.add('active');
-  document.getElementById('btn-hi').classList.remove('active');
-  applyLang();
-};
-
-document.getElementById('btn-hi').onclick = () => {
-  state.currentLang = 'hi';
-  document.getElementById('btn-hi').classList.add('active');
-  document.getElementById('btn-en').classList.remove('active');
-  applyLang();
-};
+const langBtns = ['en', 'hi', 'ta', 'bn'];
+langBtns.forEach(lang => {
+  const btn = document.getElementById(`btn-${lang}`);
+  if (btn) {
+    btn.onclick = () => {
+      state.currentLang = lang;
+      langBtns.forEach(l => {
+        const b = document.getElementById(`btn-${l}`);
+        if (b) {
+          if (l === lang) b.classList.add('active');
+          else b.classList.remove('active');
+        }
+      });
+      applyLang();
+    };
+  }
+});
 
 // ----------------------------------------------------
 // INTERATIVE ROUTING & VIEW CONTROLLER
@@ -1424,6 +1429,18 @@ const SUGGESTIONS = {
     "आधार अपडेट के लिए आवश्यक दस्तावेज़?",
     "सड़क के गड्ढे की शिकायत कैसे दर्ज करें?",
     "PM-आवास योजना के लिए पात्रता नियम"
+  ],
+  ta: [
+    "புதிய பாஸ்போர்ட் விண்ணப்பிப்பது எப்படி?",
+    "ஆதார் புதுப்பித்தலுக்கு தேவையான ஆவணங்கள்?",
+    "சாலைப் பள்ளம் குறித்த புகாரை எவ்வாறு பதிவு செய்வது?",
+    "PM-ஆவாஸ் தகுதி விதிகளைச் சரிபார்க்கவும்"
+  ],
+  bn: [
+    "নতুন পাসপোর্টের জন্য কীভাবে আবেদন করবেন?",
+    "আধার আপডেটের জন্য প্রয়োজনীয় নথি?",
+    "রাস্তার গর্তের অভিযোগ কীভাবে দায়ের করব?",
+    "PM-আবাস যোগ্যতার নিয়ম পরীক্ষা করুন"
   ]
 };
 
@@ -1444,9 +1461,13 @@ function initChat() {
   // Set default initial greeting if chat is empty
   const log = document.getElementById('chatLog');
   if (log.children.length === 0) {
-    const defaultGreeting = state.currentLang === 'hi'
-      ? "नमस्ते! मैं आपका सहायक AI नागरिक साथी हूँ। आप मुझसे सरकारी योजनाओं, आवेदन प्रक्रियाओं या स्थानीय शिकायतों के निवारण के बारे में पूछ सकते हैं।"
-      : "Namaste! I am your Sahayak AI civic companion. You can ask me about government welfare schemes, documentation requirements, or guidelines for reporting street issues.";
+    const greetings = {
+      hi: "नमस्ते! मैं आपका सहायक AI नागरिक साथी हूँ। आप मुझसे सरकारी योजनाओं, आवेदन प्रक्रियाओं या स्थानीय शिकायतों के निवारण के बारे में पूछ सकते हैं।",
+      ta: "வணக்கம்! நான் உங்கள் சஹாயக் AI குடிமைத் துணைவன். அரசு நலத்திட்டங்கள், ஆவணத் தேவைகள் அல்லது உள்ளூர் புகாரளிக்கும் வழிகாட்டுதல்கள் பற்றி நீங்கள் என்னிடம் கேட்கலாம்.",
+      bn: "নমস্কার! আমি আপনার সহায়ক AI নাগরিক সহযোগী। আপনি আমাকে সরকারী কল্যাণমূলক প্রকল্প, প্রয়োজনীয় নথিপত্র বা স্থানীয় অভিযোগ দায়েরের নির্দেশিকা সম্পর্কে জিজ্ঞাসা করতে পারেন।",
+      en: "Namaste! I am your Sahayak AI civic companion. You can ask me about government welfare schemes, documentation requirements, or guidelines for reporting street issues."
+    };
+    const defaultGreeting = greetings[state.currentLang] || greetings['en'];
     addMessage(defaultGreeting, 'bot');
   }
 
@@ -1476,7 +1497,7 @@ function initChat() {
       if (speechBtn.classList.contains('listening')) {
         recognition.stop();
       } else {
-        recognition.lang = state.currentLang === 'hi' ? 'hi-IN' : 'en-IN';
+        recognition.lang = state.currentLang === 'hi' ? 'hi-IN' : (state.currentLang === 'ta' ? 'ta-IN' : (state.currentLang === 'bn' ? 'bn-IN' : 'en-IN'));
         speechBtn.classList.add('listening');
         recognition.start();
       }
@@ -1583,12 +1604,15 @@ function speakAloud(text) {
     .replace(/\d+\./g, '');
 
   synthesisUtterance = new SpeechSynthesisUtterance(cleanText);
-  synthesisUtterance.lang = state.currentLang === 'hi' ? 'hi-IN' : 'en-US';
+  synthesisUtterance.lang = state.currentLang === 'hi' ? 'hi-IN' : (state.currentLang === 'ta' ? 'ta-IN' : (state.currentLang === 'bn' ? 'bn-IN' : 'en-US'));
   
   // Set voice options
   const voices = window.speechSynthesis.getVoices();
-  const langMatch = state.currentLang === 'hi' ? 'hi-IN' : 'en';
-  const matchingVoice = voices.find(v => v.lang.includes(langMatch));
+  const langMatch = state.currentLang.toLowerCase();
+  const matchingVoice = voices.find(v => {
+    const vlang = v.lang.toLowerCase().replace('_', '-');
+    return vlang === langMatch || vlang.startsWith(langMatch + '-') || vlang.includes(langMatch);
+  });
   if (matchingVoice) {
     synthesisUtterance.voice = matchingVoice;
   }
@@ -1635,7 +1659,7 @@ async function handleSendMessage() {
       Rules:
       - Answer citizen questions about Indian government services (Aadhaar, PAN, Passport, Ration, Voter ID, Welfare Schemes, Municipal grievances, certificates).
       - Maintain standard administrative vocabulary. List clear application procedures, timelines, fees and essential document requirements.
-      - The citizen's active portal language is currently: ${state.currentLang === 'hi' ? 'Hindi (हिंदी)' : 'English'}. You MUST formulate your entire response in ${state.currentLang === 'hi' ? 'Hindi (हिंदी)' : 'English'} only.
+      - The citizen's active portal language is currently: ${state.currentLang === 'hi' ? 'Hindi (हिंदी)' : (state.currentLang === 'ta' ? 'Tamil (தமிழ்)' : (state.currentLang === 'bn' ? 'Bengali (বাংলা)' : 'English'))}. You MUST formulate your entire response in ${state.currentLang === 'hi' ? 'Hindi (हिंदी)' : (state.currentLang === 'ta' ? 'Tamil (தமிழ்)' : (state.currentLang === 'bn' ? 'Bengali (বাংলা)' : 'English'))} only.
       - Give structured answers using lists and bold tags. Be direct and avoid technical legalese.`;
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${state.apiModel}:generateContent?key=${state.apiKey}`, {
