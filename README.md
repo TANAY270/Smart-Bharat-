@@ -4,55 +4,71 @@ Smart Bharat is a premium, Generative AI-powered web platform designed to simpli
 
 ---
 
-## 🌟 Key Features
+## 🏛️ 1. Chosen Vertical: Civic Services & Municipal Grievance Redressal
 
-### 1. 💬 Sahayak AI Companion
-*   **Direct REST Integration**: Connects to the **Google Gemini API** (supporting `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.5-flash`, `gemini-2.0-flash`, etc.) using a direct REST endpoint. Passing the key in the URL (`?key=...`) bypasses custom header stripping rules in privacy-focused browsers like **Brave**.
-*   **Self-Healing Diagnostics**: If connection issues occur, the client automatically runs `ModelService.ListModels` live to list all permitted models for your exact key.
-*   **Dual-Mode fallback**: Runs on a high-fidelity **Offline NLP Simulator** using matching local rules if no API key is provided.
-*   **Active Multilingual Language Lock**: The AI Companion dynamically reads the website's language toggle (`state.currentLang`) to force responses in the selected language (**English**, **Hindi (हिंदी)**, **Tamil (தமிழ்)**, or **Bengali (বাংলা)**) matching the citizen's active view.
-*   **Speech Accessibility & Voice Synthesis**:
-    *   🎤 **Speech-to-Text (STT)**: Voice-input query box matching the selected language (`en-IN`, `hi-IN`, `ta-IN`, `bn-IN`).
-    *   🔊 **Text-to-Speech (TTS)**: Audibly reads back AI responses in the chosen language.
-    *   ⚙️ **Robust Voice Matching**: Normalizes case and delimiter characters (e.g. `ta`, `ta-IN`, `ta_IN`) to dynamically locate matching system voices on the user's OS.
-    *   ⚠️ **Speech Pack Diagnostics Toast**: Renders a floating visual warning if a user attempts to listen in a language (like Hindi, Tamil, or Bengali) that lacks downloaded native speech packages on the client OS, or if browser shields (such as Brave's fingerprinting blocker) restrict voice enumeration, detailing how to enable them.
+Smart Bharat targets the **Civic Services and Local Governance** vertical. Navigating public offices, understanding documentation requirements, and reporting structural municipal issues (e.g., potholes, broken streetlights) are often complex, time-consuming tasks for citizens. 
 
-### 2. ⚠️ Public Grievance (Report an Issue)
-*   **Interactive Ward Map**: Canvas-based municipal road maps. Pin locations to automatically capture `X, Y` coordinates.
-*   **Auto-Location**: Simulated browser GPS coordinate detector.
-*   **AI Auto-Categorizer**: Real-time keyword scanning automatically matches and selects categories (e.g., Streetlights, Potholes, Water Supply) based on the user's description.
-*   **Official Receipts**: Stamped confirmation cards with printable and downloadable receipt text files.
-
-### 3. 📂 Status Tracker & Action Simulator
-*   **Log Timelines**: Track complaints from submission, to inspector allocation, through active site repair, to resolution.
-*   **Officer Simulation**: Allows administrators or testers to simulate official updates, updating timelines and changing map coordinate colors.
-*   **Satisfaction Audit**: Citizen ratings (1-5 stars) upon resolution. Rates of 1 or 2 stars activate an **Escalate Case** process, re-opening the file and assigning it to the Senior Nodal Supervisor (Commissioner Auditor Board).
-
-### 4. 🏛️ Municipal Analytics Ledger
-*   **Transparency Dashboard**: Displays live municipal metrics on the Home page, including **Resolution Rates (87.4%)**, **Average Resolution Timelines (3.2 Days)**, and **Active Service Crews** to build public trust.
-
-### 5. 📂 Document Helper & Verification Lab
-*   **Checklist Compiler**: Renders mandatory checklist requirements and schedules for citizenship services (Aadhaar, PAN, Passport, Ration Card, Voter ID, Income Certificate).
-*   **Verification Lab**: Drop dummy files (e.g. name a text file `aadhaar_card.pdf` or `photo.jpg`) and the app's heuristic parser checks it off the list.
-
-### 6. ♿ Accessibility Toolbar
-*   **Dynamic Typography Scaling**: Custom buttons (`A+`, `A`, `A-`) in the top navigation header set a `--font-scale` variable on the document root, adjusting the sizes of all elements from 85% to 130% dynamically.
-
-### 7. 🔗 Website Footer Links & Support Modals
-*   **Standard Website Footer**: Premium footer links mapping *About Us*, *Contact Us*, *Feedback*, *FAQs*, and *Help* sections.
-*   **Localized Overlays**: Clicking a footer link opens an interactive overlay modal (`#infoModal`) displaying translation-compliant content (**English**, **Hindi**, **Tamil**, or **Bengali**):
-    *   *Feedback*: Interactive star-rating and comment submission form.
-    *   *FAQs*: Accordion cards with slide-down panels.
-    *   *Help*: Step-by-step guidance manual.
+To bridge this gap, Smart Bharat provides a unified, highly visual dashboard containing:
+*   An intelligent civic assistant (**Sahayak AI**).
+*   An interactive, map-based reporting interface (**Public Grievance**).
+*   A localized guidance compiler (**Document Verification Lab**).
+*   Live transparency ledgers.
 
 ---
 
-## 🛠️ Technology Stack
-*   **Core Structure**: Semantic HTML5.
-*   **Styling**: Vanilla CSS3 (custom HSL variables, responsive grids, and transitions).
-*   **Logic**: ES6+ Javascript Modules.
-*   **AI Integration**: Google Gemini API via REST.
-*   **Tooling**: Vite (hot module reloading, production bundling).
+## 💡 2. Approach and Logic
+
+The platform's design centers on **digital inclusion, maximum accessibility, and client-side self-healing performance**:
+
+### A. Multilingual Architecture (Digital Inclusion)
+To accommodate India's diverse demographic landscape, the platform supports **English, Hindi (हिंदी), Tamil (தமிழ்), and Bengali (বাংলা)**. Language switches are handled globally:
+- We map a unified dictionary (`DICT`) holding local interface texts for all four languages.
+- Clicking any language toggle re-renders all UI cards, buttons, titles, placeholder texts, and suggestion chips instantly.
+- The chatbot's welcome greetings and suggested quick-action cards load in the selected language.
+
+### B. Direct REST Integration & Bypass Logic
+- Instead of using heavyweight Node SDKs, the platform connects to the **Google Gemini API** directly via client-side REST requests.
+- Privacy-focused browsers like **Brave** strip custom request headers (such as `x-goog-api-key`) as part of fingerprinting protection. To guarantee reliable connections across all browsers, we pass the API key as a query parameter (`?key=...`) directly in the REST URL.
+
+### C. Self-Healing Diagnostics
+- If the user's key experiences connection errors, the application runs a live diagnostics routine calling `ModelService.ListModels`. It scans and retrieves the exact list of models permitted for that key (supporting `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.5-flash`, `gemini-2.0-flash`, etc.) to dynamically switch and repair the connection.
+- If no key is configured, the application falls back to an offline **NLP Rule Simulator** to maintain core interactivity.
+
+### D. Adaptive Speech Engine
+- **Speech-to-Text (STT)**: Integrates the HTML5 `webkitSpeechRecognition` API, dynamically setting the recognition language code (`en-IN`, `hi-IN`, `ta-IN`, `bn-IN`) based on the active UI language.
+- **Text-to-Speech (TTS)**: Leverages `SpeechSynthesisUtterance`. It features a custom voice search algorithm that normalizes language tags (e.g., matching `ta-IN`, `ta_IN`, or `ta` for Tamil) to locate the native voice registered on the client machine.
+- **Diagnostic Toasts**: If the browser returns an empty voice list (often due to Brave's fingerprinting shields) or lacks the required OS speech packages, the system displays a custom toast explaining how to download the voice assets.
+
+---
+
+## 🛠️ 3. How the Solution Works
+
+### 1. Sahayak AI Companion
+- Formulates a detailed system prompt instructing the LLM to act as a supportive administrative civic officer.
+- Injects a strict **Active Language Lock**: The system prompt instructs the AI to formulate its entire reply only in the selected locale (English, Hindi, Tamil, or Bengali).
+
+### 2. Interactive Grievance Map & Real-Time Categorizer
+- Citizens pin coordinates on an interactive canvas map.
+- As the user types their complaint description, a debounced **Auto-Categorizer** scans key phrases (e.g., "gully", "dark", "leak") and automatically selects the correct municipal department dropdown (e.g., Streetlights, Potholes, Water Supply).
+
+### 3. Officer Simulation & Grievance Auditing
+- Timeline nodes trace the complaint from submission, allocation, and active repair, to resolution.
+- Testers can simulate officer actions, which changes status colors on the interactive map.
+- When resolved, citizens submit a 1-5 star review. High-priority grievances (1 or 2 stars) trigger an **Escalate Case** flow, re-opening the file and assigning it to the Commissioner Auditor Board.
+
+### 4. Interactive Document Verification Lab
+- Lists document checklists for critical citizen services (Aadhaar, Passport, Ration Card, etc.).
+- The verification lab lets users drop draft mock files (e.g., a text file named `aadhaar_card.pdf`). A regex helper checks the files against the required guidelines and updates the visual checkmark grid.
+
+---
+
+## 📌 4. Assumptions Made
+
+1.  **API Key Configuration**: It is assumed the user will input their Gemini API key via the **"AI Config"** modal on the header to unlock real-time Gemini chat capabilities.
+2.  **OS Voice Availability**: It is assumed that the client machine running the browser has the corresponding language speech packages (Hindi, Tamil, or Bengali) installed locally in the OS Settings for the text-to-speech engine to output audible native audio.
+3.  **Autoplay Constraints**: To comply with modern browser policies, Text-to-Speech (TTS) is disabled (`muted`) by default on page load. The user must click the speaker button on a message or toggle the TTS header button to unmute it.
+4.  **Mock File Types**: The Document Verification Lab validates files heuristically by inspecting file names and formats (e.g., matching `.pdf`, `.jpg`, `.png`) rather than performing server-side OCR metadata analysis.
+5.  **Client-Side Persistence**: State data (complaints, custom API keys, and settings) is stored inside browser `localStorage` to persist values across page reloads.
 
 ---
 
@@ -71,35 +87,10 @@ npm install
 ```bash
 npm run dev
 ```
-The server will start at **http://localhost:5173/**. Open this URL in Brave or any modern web browser.
+The server will start at **http://localhost:5173/**.
 
 ### 3. Build for Production
 ```bash
 npm run build
 ```
 Generates a static web bundle inside the `/dist` directory.
-
-### 4. Preview Production Build
-```bash
-npm run preview
-```
-
----
-
-## 📂 Project Structure
-```text
-Smart Bharat/
-├── index.html        # Main SPA HTML interface, layouts, and modals
-├── styles.css        # Theme variables, responsive layouts, header, footer, and animations
-├── app.js            # Main application logic, REST fetch, state, and simulators
-├── package.json      # Dependencies and dev server configurations
-├── netlify.toml      # Build rules and SPA redirects configuration for Netlify
-├── vercel.json       # Router rewrites configuration for Vercel
-├── firebase.json     # Public folder and SPA rewrites for Firebase Hosting
-└── README.md         # Documentation
-```
-
----
-
-## 🔒 Security Note (Gemini API Integration)
-This application supports client-side API requests to Google Gemini for prototyping and testing ease. For production environments, it is recommended to set up a proxy backend server (e.g., Node/Express) to handle API keys and securely sign requests.
